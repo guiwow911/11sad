@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,orientation=landscape" />
-  <title>FPS Duel (Full Stack Version)</title>
+  <title>FPS 对决 - 云端联机版</title>
   <style>
     html, body { margin:0; height:100%; width:100%; overflow:hidden; background:#000; font-family:system-ui,-apple-system,sans-serif; touch-action:none; }
     canvas { display:block; width:100%; height:100%; }
@@ -55,13 +55,13 @@
 <body>
   <div id="overlay">
     <div class="card">
-      <div style="font-size:18px; font-weight:800; color:#0f172a; margin-bottom:8px;">FPS 对决（Socket.io 联机版）</div>
+      <div style="font-size:18px; font-weight:800; color:#0f172a; margin-bottom:8px;">FPS 对决（Render 云端联机版）</div>
       <div class="row">
         <div class="col">
           <div style="font-size:12px; line-height:1.6; color:#475569;">
-            • <b>电脑操作</b>：WASD 移动，鼠标转动视角，左键射击，右键开镜，R 装弹，1/2 切枪。<br>
-            • <b>手机操作</b>：左侧摇杆移动，右侧滑动转视角，开火键自动开镜并射击。<br>
-            • <b>战斗机制</b>：躯干 100 伤害（一击必杀），头部/四肢 50 伤害；死后 5 秒复活，复活后享受 3 秒无敌护盾。
+            • <b>电脑操作</b>：WASD 移动，鼠标控制视角，左键射击，右键开镜，R 换弹，1/2 切枪。<br>
+            • <b>手机操作</b>：左侧虚拟摇杆移动，右侧空白滑动转动视角，开火键自动开镜并射击。<br>
+            • <b>规则机制</b>：击中躯干 100 伤害（一枪淘汰），头部及四肢 50 伤害；淘汰后 5 秒自动复活，复活后获得 3 秒无敌护盾。
           </div>
           <div style="margin-top:12px; display:flex; gap:8px;">
             <button id="btnSingle" style="background:#e2e8f0;">单人训练</button>
@@ -71,8 +71,8 @@
         </div>
         <div class="col" id="multiPanel" style="display:none; border-left:1px solid #cbd5e1; padding-left:12px;">
           <div style="font-weight:700; font-size:13px; margin-bottom:6px;">云端房间联机</div>
-          <button id="btnCreateRoom" style="background:#3b82f6; color:#fff; border:none; width:100%;">创建新房间 (生成6位码)</button>
-          <div style="margin-top:10px; font-size:11px; color:#64748b;">输入 6 位房间号加入：</div>
+          <button id="btnCreateRoom" style="background:#3b82f6; color:#fff; border:none; width:100%;">创建新房间 (生成6位短码)</button>
+          <div style="margin-top:10px; font-size:11px; color:#64748b;">输入对方的 6 位房间号加入：</div>
           <div style="display:flex; gap:6px; margin-top:4px;">
             <input type="text" id="roomInput" maxlength="6" placeholder="例如 AB12CD">
             <button id="btnJoinRoom" style="background:#f59e0b; color:#fff; border:none;">加入</button>
@@ -121,8 +121,8 @@
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
 
-// 配置后端服务地址（本地测试使用 http://localhost:3000）
-const SOCKET_SERVER_URL = "http://localhost:3000";
+// 已经自动绑定你的 Render 云端服务地址
+const SOCKET_SERVER_URL = "https://one1sad.onrender.com";
 
 const isMobile = matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 const overlay = document.getElementById('overlay'), msgEl = document.getElementById('msg'), scopeEl = document.getElementById('scope'), crosshair = document.getElementById('crosshair');
@@ -506,7 +506,6 @@ if (!isMobile) {
   addEventListener('keyup', e => state.keys.delete(e.code));
   renderer.domElement.addEventListener('click', () => { if (state.started && !state.locked) lockPointer(); });
 } else {
-  // 手机端事件
   btnShoot.onpointerdown = (e) => {
     e.preventDefault(); e.target.setPointerCapture(e.pointerId);
     if (!state.dead && state.weapon === "sniper") state.ads = true;
@@ -612,7 +611,6 @@ function tick(now) {
   scopeEl.style.display = showScope ? "block" : "none";
   crosshair.style.display = (!state.dead && !showScope) ? "block" : "none";
 
-  // 手部武器贴合视角
   viewRoot.scale.setScalar(1.6);
   viewRoot.position.copy(camera.position); viewRoot.quaternion.copy(camera.quaternion);
   const targetVM = (state.weapon === "sniper") ? new THREE.Vector3(0.26, -0.38, -0.6) : new THREE.Vector3(0.3, -0.35, -0.5);
@@ -620,7 +618,6 @@ function tick(now) {
   sniperVM.visible = (state.weapon === "sniper") && !showScope && !state.dead;
   knifeVM.visible = (state.weapon === "knife") && !state.dead;
 
-  // 联机玩家模型位置更新
   if (net.connected) {
     if (net.peer.hp <= 0) {
       peerModel.root.visible = false;
